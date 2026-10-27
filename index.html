@@ -1,327 +1,111 @@
 
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <base target="_top">
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1">
+function submitPayment(payType) {
+  if (busy) return;
 
-  <title>บันทึกการจ่ายเงินกลุ่ม</title>
+  if (!idToken) {
+    setStatus('ไม่พบ ID Token กรุณาเปิดผ่าน LIFF ใหม่', 'error');
+    return;
+  }
 
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  const month = $('paymentMonth').value;
 
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-                   Roboto, sans-serif;
-    }
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    setStatus('กรุณาเลือกเดือนที่ต้องการบันทึก', 'error');
+    return;
+  }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f3f4f6;
-    }
+  busy = true;
+  setButtons(false);
+  setStatus('กำลังบันทึกและตรวจสอบข้อมูลบนเซิร์ฟเวอร์...', 'info');
 
-    .card {
-      width: 100%;
-      max-width: 380px;
-      padding: 28px 22px;
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 6px 24px rgba(0, 0, 0, .07);
-    }
+  let finished = false;
 
-    h2 {
-      text-align: center;
-      font-size: 21px;
-      color: #1f2937;
-      margin: 0 0 24px;
-    }
+  const watchdog = setTimeout(function() {
+    if (finished) return;
 
-    .profile {
-      text-align: center;
-      margin-bottom: 24px;
-    }
+    finished = true;
+    busy = false;
 
-    .avatar {
-      font-size: 42px;
-      margin-bottom: 8px;
-    }
+    // ไม่เปิดปุ่มทันที เพราะเซิร์ฟเวอร์อาจบันทึกสำเร็จแล้ว
+    setStatus(
+      'เซิร์ฟเวอร์ตอบกลับช้าเกิน 30 วินาที ' +
+      'กรุณาตรวจสอบ Google Sheets และ Apps Script > Executions ' +
+      'ก่อนลองบันทึกอีกครั้ง',
+      'error'
+    );
+  }, 30000);
 
-    .name {
-      font-weight: 700;
-      font-size: 18px;
-      color: #111827;
-    }
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(watchdog);
+      busy = false;
 
-    .muted {
-      color: #6b7280;
-      font-size: 13px;
-    }
-
-    label {
-      display: block;
-      font-size: 14px;
-      font-weight: 600;
-      color: #374151;
-      margin: 14px 0 8px;
-    }
-
-    input[type="month"] {
-      width: 100%;
-      padding: 13px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      font-size: 16px;
-      background: white;
-    }
-
-    button {
-      width: 100%;
-      padding: 15px;
-      margin-top: 12px;
-      border: 0;
-      border-radius: 12px;
-      color: white;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-
-    .transfer { background: #2563eb; }
-    .cash { background: #059669; }
-
-    #status {
-      display: none;
-      margin-top: 18px;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 14px;
-      line-height: 1.6;
-      overflow-wrap: anywhere;
-    }
-
-    #status.success {
-      display: block;
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    #status.error {
-      display: block;
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    #status.info {
-      display: block;
-      background: #dbeafe;
-      color: #1e40af;
-    }
-
-    .footer {
-      text-align: center;
-      color: #9ca3af;
-      font-size: 11px;
-      margin-top: 22px;
-    }
-  </style>
-</head>
-
-<body>
-  <main class="card">
-    <h2>💰 บันทึกการจ่ายเงินกลุ่ม</h2>
-
-    <div class="profile">
-      <div class="avatar">👤</div>
-      <div id="displayName" class="name">กำลังเชื่อมต่อ LINE...</div>
-      <div class="muted">ระบบบันทึกการจ่ายเงินประจำเดือน</div>
-    </div>
-
-    <label for="paymentMonth">เดือนที่ต้องการบันทึก</label>
-    <input type="month" id="paymentMonth">
-
-    <button id="btnTransfer" class="transfer"
-            disabled onclick="submitPayment('เงินโอน')">
-      📱 โอนเงินเรียบร้อยแล้ว
-    </button>
-
-    <button id="btnCash" class="cash"
-            disabled onclick="submitPayment('เงินสด')">
-      💵 จ่ายเป็นเงินสดแล้ว
-    </button>
-
-    <div id="status" role="status" aria-live="polite"></div>
-
-    <div class="footer">
-      ระบบจะยืนยันผลหลังบันทึกข้อมูลลง Google Sheets
-    </div>
-  </main>
-
-  <script>
-    // ต้องตรงกับ LIFF ID ของคุณ
-    const LIFF_ID = '2012247912-c3hTHOtT';
-
-    let idToken = '';
-    let busy = false;
-
-    const $ = id => document.getElementById(id);
-
-    function setStatus(message, type) {
-      const box = $('status');
-      box.className = type;
-      box.textContent = message;
-    }
-
-    function setButtons(enabled) {
-      $('btnTransfer').disabled = !enabled;
-      $('btnCash').disabled = !enabled;
-    }
-
-    function currentMonth() {
-      const now = new Date();
-      return now.getFullYear() + '-' +
-        String(now.getMonth() + 1).padStart(2, '0');
-    }
-
-    async function initLiff() {
-      setButtons(false);
-      $('paymentMonth').value = currentMonth();
-
-      try {
-        await liff.init({ liffId: LIFF_ID });
-
-        if (!liff.isLoggedIn()) {
-          liff.login();
-          return;
-        }
-
-        idToken = liff.getIDToken();
-
-        if (!idToken) {
-          throw new Error(
-            'ไม่พบ ID Token กรุณาตรวจสอบ Scope openid ใน LINE Developers'
-          );
-        }
-
-        const decoded = liff.getDecodedIDToken();
-        $('displayName').textContent =
-          decoded && decoded.name ? decoded.name : 'สมาชิก LINE';
-
-        setButtons(true);
-        setStatus('เชื่อมต่อ LINE สำเร็จ พร้อมบันทึกการจ่ายเงิน', 'info');
-
-      } catch (error) {
-        console.error(error);
-        $('displayName').textContent = 'เชื่อมต่อไม่สำเร็จ';
+      if (!result) {
         setStatus(
-          'ไม่สามารถเริ่มระบบได้ กรุณาเปิดผ่าน LIFF และตรวจสอบการตั้งค่า: ' +
-          (error.message || 'เกิดข้อผิดพลาด'),
+          'เซิร์ฟเวอร์ไม่ส่งผลยืนยันกลับมา กรุณาตรวจสอบชีต',
           'error'
         );
-      }
-    }
-
-    function submitPayment(payType) {
-      if (busy || !idToken) return;
-
-      const month = $('paymentMonth').value;
-
-      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
-        setStatus('กรุณาเลือกเดือนที่ต้องการบันทึก', 'error');
         return;
       }
 
-      busy = true;
-      setButtons(false);
-      setStatus('กำลังบันทึกและตรวจสอบข้อมูลบนเซิร์ฟเวอร์...', 'info');
+      if (result.duplicate) {
+        setButtons(true);
+        setStatus(
+          '⚠️ ' + (result.message || 'มีรายการนี้แล้ว') +
+          '\nเดือน: ' + (result.month || month) +
+          '\nวิธีจ่ายเดิม: ' + (result.payType || '-'),
+          'error'
+        );
+        return;
+      }
 
-      // เรียก Apps Script และรอผลตอบกลับจริง
-      google.script.run
-        .withSuccessHandler(function(result) {
-          busy = false;
+      if (result.success !== true) {
+        setButtons(true);
+        setStatus(
+          result.message || 'เซิร์ฟเวอร์ไม่ยืนยันการบันทึก',
+          'error'
+        );
+        return;
+      }
 
-          if (!result) {
-            setButtons(true);
-            setStatus(
-              'ไม่ได้รับผลยืนยันจากเซิร์ฟเวอร์ กรุณาตรวจสอบชีตก่อนลองใหม่',
-              'error'
-            );
-            return;
-          }
+      setStatus(
+        '✅ บันทึกสำเร็จ' +
+        '\nชื่อ: ' + (result.name || '-') +
+        '\nเดือน: ' + (result.month || month) +
+        '\nวิธีจ่าย: ' + (result.payType || payType) +
+        '\nเวลาบันทึก: ' + (result.recordedAt || '-'),
+        'success'
+      );
 
-          if (result.duplicate) {
-            setButtons(true);
-            setStatus(
-              '⚠️ ' + result.message +
-              ' วิธีจ่ายเดิม: ' + (result.payType || '-') +
-              ' เดือน: ' + result.month +
-              ' ระบบไม่ได้เพิ่มรายการใหม่',
-              'error'
-            );
-            return;
-          }
+      if (liff.isInClient()) {
+        setTimeout(function() {
+          liff.closeWindow();
+        }, 1500);
+      } else {
+        setButtons(true);
+      }
+    })
+    .withFailureHandler(function(error) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(watchdog);
+      busy = false;
+      setButtons(true);
 
-          if (result.success !== true) {
-            setButtons(true);
-            setStatus(
-              result.message || 'เซิร์ฟเวอร์ไม่ยืนยันการบันทึก',
-              'error'
-            );
-            return;
-          }
+      console.error('savePayment error:', error);
 
-          setStatus(
-            '✅ ' + result.message +
-            '\nชื่อ: ' + result.name +
-            '\nเดือน: ' + result.month +
-            '\nวิธีจ่าย: ' + result.payType +
-            '\nเวลาบันทึก: ' + result.recordedAt +
-            '\nกำลังปิดหน้าต่าง...',
-            'success'
-          );
-
-          // ปิดเฉพาะเมื่อเซิร์ฟเวอร์ยืนยัน success === true
-          if (liff.isInClient()) {
-            setTimeout(function() {
-              liff.closeWindow();
-            }, 1500);
-          } else {
-            setButtons(true);
-          }
-        })
-        .withFailureHandler(function(error) {
-          busy = false;
-          setButtons(true);
-
-          setStatus(
-            '❌ บันทึกไม่สำเร็จ: ' +
-            (error && error.message
-              ? error.message
-              : 'เกิดข้อผิดพลาด') +
-            ' กรุณาตรวจสอบชีตก่อนลองส่งใหม่',
-            'error'
-          );
-        })
-        .savePayment({
-          idToken: idToken,
-          month: month,
-          payType: payType
-        });
-    }
-
-    initLiff();
-  </script>
-</body>
-</html>
+      setStatus(
+        '❌ บันทึกไม่สำเร็จ: ' +
+        (error && error.message ? error.message : 'ไม่ทราบสาเหตุ') +
+        '\nกรุณาตรวจสอบชีตก่อนลองใหม่',
+        'error'
+      );
+    })
+    .savePayment({
+      idToken: idToken,
+      month: month,
+      payType: payType
+    });
+}
