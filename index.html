@@ -4,112 +4,120 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>บันทึกการจ่ายเงินประจำเดือน</title>
-    <!-- ใช้ Tailwind CSS -->
-    <script src="https://jsdelivr.net"></script>
-    <!-- LINE LIFF SDK -->
+    <!-- โหลด LINE SDK ไว้ด้านบนสุดเพื่อให้พร้อมทำงานทันที -->
     <script src="https://line-scdn.net"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; min-h: 100vh; min-height: 100vh; padding: 20px; }
+        .card { background: white; padding: 30px 24px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); width: 100%; max-width: 360px; text-align: center; }
+        h2 { font-size: 20px; color: #1f2937; margin-bottom: 24px; font-weight: bold; }
+        .profile-zone { display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; }
+        .avatar { width: 75px; height: 75px; border-radius: 50%; border: 3px solid #10b981; margin-bottom: 8px; display: none; }
+        .hello { color: #6b7280; font-size: 13px; }
+        .name { font-size: 18px; font-weight: 600; color: #111827; margin-top: 2px; }
+        .btn { width: 100%; padding: 14px; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; margin-bottom: 12px; cursor: pointer; transition: opacity 0.2s; display: block; }
+        .btn:active { opacity: 0.8; }
+        .btn-transfer { background-color: #2563eb; }
+        .btn-cash { background-color: #059669; }
+        .btn:disabled { background-color: #d1d5db; color: #9ca3af; cursor: not-allowed; opacity: 0.6; }
+        .footer-text { font-size: 11px; color: #9ca3af; margin-top: 20px; }
+        /* วงล้อโหลดตอนเปิดแอป */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 15px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body>
 
-    <div class="bg-white p-6 rounded-2xl shadow-md w-full max-w-sm">
-        <h2 class="text-xl font-bold text-center text-gray-800 mb-6">💰 บันทึกการจ่ายเงินกลุ่ม</h2>
+    <div class="card">
+        <h2>💰 บันทึกการจ่ายเงินกลุ่ม</h2>
         
-        <!-- ส่วนแสดงโปรไฟล์ไลน์ -->
-        <div class="flex flex-col items-center mb-6">
-            <img id="avatar" class="w-20 h-20 rounded-full border-2 border-green-500 mb-2 hidden" src="" alt="Profile">
-            <p class="text-gray-500 text-sm">สวัสดีคุณ</p>
-            <p id="displayName" class="text-lg font-semibold text-gray-800">กำลังโหลดข้อมูล...</p>
+        <div class="profile-zone">
+            <img id="avatar" class="avatar" src="" alt="Profile">
+            <p class="hello">สวัสดีคุณ</p>
+            <div id="loader" class="loader"></div>
+            <p id="displayName" class="name">กำลังเชื่อมต่อ LINE...</p>
         </div>
 
-        <!-- ฟอร์มสำหรับส่งข้อมูลเข้า Google Sheets แบบซ่อนไว้ (แก้ปัญหาโหลดช้า/CORS) -->
-        <form id="paymentForm" method="POST" target="hidden_iframe" class="space-y-4">
+        <form id="paymentForm" method="POST" target="hidden_iframe">
             <input type="hidden" name="name" id="inputName">
             <input type="hidden" name="payType" id="inputPayType">
             
-            <button type="button" onclick="submitPayment('เงินโอน')" id="btnTransfer" disabled
-                class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition duration-200 cursor-not-allowed opacity-50 flex justify-center items-center gap-2">
+            <button type="button" onclick="submitPayment('เงินโอน')" id="btnTransfer" class="btn btn-transfer" disabled>
                 📱 โอนเงินเรียบร้อยแล้ว
             </button>
 
-            <button type="button" onclick="submitPayment('เงินสด')" id="btnCash" disabled
-                class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition duration-200 cursor-not-allowed opacity-50 flex justify-center items-center gap-2">
+            <button type="button" onclick="submitPayment('เงินสด')" id="btnCash" class="btn btn-cash" disabled>
                 💵 จ่ายเป็นเงินสดแล้ว
             </button>
         </form>
 
-        <!-- iframe ที่ซ่อนไว้เพื่อรองรับการส่งข้อมูลแบบเบื้องหลัง -->
         <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-
-        <p class="text-center text-xs text-gray-400 mt-6">ระบบจะบันทึกข้อมูลเข้า Google Sheet ทันทีที่กด</p>
+        <p class="footer-text">ระบบจะบันทึกข้อมูลเข้า Google Sheet ทันที</p>
     </div>
 
     <script>
-        // 🚨 แก้ไขข้อมูลสำคัญ 2 จุดนี้ 🚨
-        const LIFF_ID = '2012234472-lf1HfqK1'; 
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzjjHXZtUAnuUD3Dp4UdD5qn2sPClUitl8swFIF1IMKAw-zdjZW93hYCwUtn5KY6UQ/exec';
+        // 🚨 แก้ไขข้อมูลสำคัญ 2 จุดนี้เหมือนเดิม 🚨
+        const LIFF_ID = 'ใส่_LIFF_ID_ของคุณที่นี่'; 
+        const WEB_APP_URL = 'ใส่_WEB_APP_URL_ที่ได้จาก_Google_Apps_Script_ของคุณ';
 
         let userDisplayName = "";
-
-        // ตั้งค่า URL ปลายทางให้ฟอร์ม
         document.getElementById('paymentForm').action = WEB_APP_URL;
 
-        // เริ่มต้นการทำงานของ LIFF
-        async function initLIFF() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
+        // ฟังก์ชันเริ่มต้น LIFF ทำงานทันทีเมื่อสคริปต์โหลด
+        function initLIFF() {
+            liff.init({ liffId: LIFF_ID }).then(() => {
                 if (!liff.isLoggedIn()) {
                     liff.login();
                 } else {
-                    const profile = await liff.getProfile();
-                    userDisplayName = profile.displayName;
-                    
-                    document.getElementById('displayName').innerText = userDisplayName;
-                    if(profile.pictureUrl) {
-                        const avatar = document.getElementById('avatar');
-                        avatar.src = profile.pictureUrl;
-                        avatar.classList.remove('hidden');
-                    }
-                    
-                    enableButtons();
+                    liff.getProfile().then(profile => {
+                        userDisplayName = profile.displayName;
+                        
+                        // แสดงผลโปรไฟล์และปิดตัวโหลด
+                        document.getElementById('loader').style.display = 'none';
+                        document.getElementById('displayName').innerText = userDisplayName;
+                        
+                        if (profile.pictureUrl) {
+                            const avatar = document.getElementById('avatar');
+                            avatar.src = profile.pictureUrl;
+                            avatar.style.display = 'block';
+                        }
+                        
+                        // เปิดปุ่มใช้งาน
+                        document.getElementById('btnTransfer').disabled = false;
+                        document.getElementById('btnCash').disabled = false;
+                    }).catch(err => {
+                        document.getElementById('displayName').innerText = "ดึงข้อมูลโปรไฟล์ล้มเหลว";
+                    });
                 }
-            } catch (error) {
-                console.error("LIFF Initialization failed", error);
-                document.getElementById('displayName').innerText = "เกิดข้อผิดพลาดในการโหลดโปรไฟล์";
-            }
-        }
-
-        function enableButtons() {
-            const buttons = [document.getElementById('btnTransfer'), document.getElementById('btnCash')];
-            buttons.forEach(btn => {
-                btn.disabled = false;
-                btn.classList.remove('cursor-not-allowed', 'opacity-50');
+            }).catch(error => {
+                document.getElementById('displayName').innerText = "เชื่อมต่อระบบ LIFF ไม่สำเร็จ";
             });
         }
 
-        // ฟังก์ชันส่งค่าแบบรวดเร็วสะใจ ไม่ติด CORS
         function submitPayment(type) {
-            if (!userDisplayName) return alert("ไม่พบข้อมูลชื่อผู้ใช้งาน");
+            if (!userDisplayName) return;
             
-            // ใส่ข้อมูลลงในฟอร์มซ่อน
             document.getElementById('inputName').value = userDisplayName;
             document.getElementById('inputPayType').value = type;
 
-            // ล็อคหน้าจอเพื่อไม่ให้กดซ้ำ
-            document.body.style.pointerEvents = "none";
-            document.body.style.opacity = "0.6";
+            // ล็อคปุ่มป้องกันการกดซ้ำ
+            document.getElementById('btnTransfer').disabled = true;
+            document.getElementById('btnCash').disabled = true;
+            document.body.style.opacity = "0.5";
 
-            // สั่งส่งข้อมูลฟอร์มทันที (ข้อมูลจะยิงเบื้องหลังเข้า iframe โหลดเร็วมากภายใน 0.5 วินาที)
+            // ส่งข้อมูลออกไปด้านหลัง
             document.getElementById('paymentForm').submit();
 
-            // แสดงแจ้งเตือนสำเร็จและปิดหน้าจอ LIFF ทันที
+            // ปิดหน้าจอทันทีเพื่อความเร็ว
             setTimeout(() => {
-                alert(`บันทึกสถานะ "${type}" สำเร็จแล้วครับ!`);
                 liff.closeWindow();
-            }, 500); 
+            }, 300); 
         }
 
-        // รันฟังก์ชันเริ่มต้นเมื่อเปิดหน้าเว็บ
-        initLIFF();
+        // สั่งให้ระบบทำงานทันทีเมื่อหน้าเว็บพร้อม
+        window.onload = function() {
+            initLIFF();
+        };
     </script>
 </body>
 </html>
