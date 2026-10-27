@@ -181,6 +181,8 @@
 
   <script>
     const LIFF_ID = '2012247912-c3hTHOtT';
+    const API_URL =
+  'https://script.google.com/macros/s/AKfycbzjjHXZtUAnuUD3Dp4UdD5qn2sPClUitl8swFIF1IMKAw-zdjZW93hYCwUtn5KY6UQ/exec';
 
     let idToken = '';
     let busy = false;
@@ -258,149 +260,92 @@
       }
     }
 
-    function submitPayment(payType) {
-      if (busy) return;
+   
+async function submitPayment(payType) {
+  if (busy) return;
 
-      if (!idToken) {
-        setStatus(
-          'ไม่พบ ID Token กรุณาเปิดผ่าน LIFF URL ใหม่',
-          'error'
-        );
-        return;
-      }
+  if (!idToken) {
+    setStatus('ไม่พบ ID Token กรุณาเปิดผ่าน LIFF ใหม่', 'error');
+    return;
+  }
 
-      const month = $('paymentMonth').value;
+  const month = $('paymentMonth').value;
 
-      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
-        setStatus('กรุณาเลือกเดือนที่ต้องการบันทึก', 'error');
-        return;
-      }
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    setStatus('กรุณาเลือกเดือนที่ต้องการบันทึก', 'error');
+    return;
+  }
 
-      if (
-        typeof google === 'undefined' ||
-        !google.script ||
-        !google.script.run
-      ) {
-        setStatus(
-          'ไม่พบการเชื่อมต่อ Google Apps Script ' +
-          'กรุณาเปิดผ่าน LIFF URL ที่ตั้งค่า Endpoint ไว้',
-          'error'
-        );
-        return;
-      }
+  busy = true;
+  setButtons(false);
+  setStatus('กำลังบันทึกและตรวจสอบข้อมูลบนเซิร์ฟเวอร์...', 'info');
 
-      busy = true;
-      setButtons(false);
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify({
+        idToken: idToken,
+        month: month,
+        payType: payType
+      }),
+      redirect: 'follow'
+    });
 
-      setStatus(
-        'กำลังบันทึกและตรวจสอบข้อมูลบนเซิร์ฟเวอร์...',
-        'info'
-      );
-
-      let finished = false;
-
-      // Timeout นี้ไม่ได้ยกเลิกการทำงานบนเซิร์ฟเวอร์
-      const watchdog = setTimeout(function() {
-        if (finished) return;
-
-        finished = true;
-        busy = false;
-
-        setStatus(
-          'เซิร์ฟเวอร์ตอบกลับช้าเกิน 30 วินาที\n' +
-          'กรุณาตรวจสอบ Google Sheets และ Apps Script > Executions\n' +
-          'ก่อนลองบันทึกอีกครั้ง เพื่อป้องกันข้อมูลซ้ำ',
-          'error'
-        );
-
-        // ไม่เปิดปุ่มทันที เพราะคำขอเดิมอาจยังทำงานอยู่
-      }, 30000);
-
-      google.script.run
-        .withSuccessHandler(function(result) {
-          if (finished) return;
-
-          finished = true;
-          clearTimeout(watchdog);
-          busy = false;
-
-          if (!result) {
-            setButtons(true);
-
-            setStatus(
-              'เซิร์ฟเวอร์ไม่ส่งผลยืนยันกลับมา\n' +
-              'กรุณาตรวจสอบชีตก่อนลองใหม่',
-              'error'
-            );
-            return;
-          }
-
-          if (result.duplicate) {
-            setButtons(true);
-
-            setStatus(
-              '⚠️ ' + (result.message || 'มีรายการนี้แล้ว') +
-              '\nเดือน: ' + (result.month || month) +
-              '\nวิธีจ่ายเดิม: ' + (result.payType || '-') +
-              '\nระบบไม่ได้เพิ่มรายการใหม่',
-              'error'
-            );
-            return;
-          }
-
-          if (result.success !== true) {
-            setButtons(true);
-
-            setStatus(
-              result.message || 'เซิร์ฟเวอร์ไม่ยืนยันการบันทึก',
-              'error'
-            );
-            return;
-          }
-
-          setStatus(
-            '✅ ' + (result.message || 'บันทึกสำเร็จ') +
-            '\nชื่อ: ' + (result.name || '-') +
-            '\nเดือน: ' + (result.month || month) +
-            '\nวิธีจ่าย: ' + (result.payType || payType) +
-            '\nเวลาบันทึก: ' + (result.recordedAt || ''),
-            'success'
-          );
-
-          if (liff.isInClient()) {
-            setTimeout(function() {
-              liff.closeWindow();
-            }, 1500);
-          } else {
-            setButtons(true);
-          }
-        })
-        .withFailureHandler(function(error) {
-          if (finished) return;
-
-          finished = true;
-          clearTimeout(watchdog);
-          busy = false;
-
-          setButtons(true);
-
-          console.error('savePayment error:', error);
-
-          setStatus(
-            '❌ บันทึกไม่สำเร็จ: ' +
-            (error && error.message
-              ? error.message
-              : 'ไม่ทราบสาเหตุ') +
-            '\nกรุณาตรวจสอบชีตก่อนลองใหม่',
-            'error'
-          );
-        })
-        .savePayment({
-          idToken: idToken,
-          month: month,
-          payType: payType
-        });
+    if (!response.ok) {
+      throw new Error('เซิร์ฟเวอร์ตอบกลับ HTTP ' + response.status);
     }
+
+    const result = await response.json();
+
+    if (result.duplicate) {
+      setStatus(
+        '⚠️ ' + (result.message || 'คุณบันทึกเดือนนี้แล้ว') +
+        '\nเดือน: ' + (result.month || month) +
+        '\nวิธีจ่ายเดิม: ' + (result.payType || '-') +
+        '\nระบบไม่ได้เพิ่มรายการใหม่',
+        'error'
+      );
+      return;
+    }
+
+    if (result.success !== true) {
+      throw new Error(result.message || 'เซิร์ฟเวอร์ไม่ยืนยันการบันทึก');
+    }
+
+    setStatus(
+      '✅ ' + (result.message || 'บันทึกสำเร็จ') +
+      '\nชื่อ: ' + (result.name || '-') +
+      '\nเดือน: ' + (result.month || month) +
+      '\nวิธีจ่าย: ' + (result.payType || payType) +
+      '\nเวลาบันทึก: ' + (result.recordedAt || ''),
+      'success'
+    );
+
+    if (liff.isInClient()) {
+      setTimeout(function() {
+        liff.closeWindow();
+      }, 1500);
+    }
+
+  } catch (error) {
+    console.error('submitPayment error:', error);
+
+    setStatus(
+      '❌ ไม่สามารถยืนยันผลการบันทึกได้\n' +
+      (error.message || 'เกิดข้อผิดพลาด') +
+      '\nกรุณาตรวจสอบ Google Sheets ก่อนลองใหม่ เพื่อป้องกันข้อมูลซ้ำ',
+      'error'
+    );
+
+  } finally {
+    busy = false;
+    setButtons(true);
+  }
+}
+
 
     initLiff();
   </script>
