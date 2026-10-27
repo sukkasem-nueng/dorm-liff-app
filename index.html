@@ -3,192 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบแจ้งจ่ายเงินห้องพัก</title>
+    <title>สรุปยอดเงินกลุ่ม</title>
     <!-- ดึง Tailwind CSS มาช่วยแต่งหน้าจอให้สวยงาม -->
     <script src="https://tailwindcss.com"></script>
     <!-- ดึง LINE LIFF SDK เพื่อเชื่อมต่อกับไลน์ -->
     <script src="https://line-scdn.net"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 p-4">
+<body class="bg-slate-50 min-h-screen text-slate-800 antialiased">
 
-    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-md p-6 space-y-6">
-        <!-- ส่วนหัว: แสดงข้อมูลผู้ใช้งานจาก LINE -->
-        <div class="flex items-center space-x-4 border-b pb-4">
-            <img id="userAvatar" class="w-12 h-12 rounded-full bg-gray-200" src="" alt="Avatar">
+    <div class="max-w-md mx-auto p-4 space-y-4">
+        
+        <!-- ส่วนหัวแสดงโปรไฟล์ผู้เปิดดู (ดึงจาก LINE) -->
+        <div id="profile-box" class="flex items-center space-x-3 bg-white p-3 rounded-2xl shadow-sm border border-slate-100 hidden">
+            <img id="user-avatar" class="w-10 h-10 rounded-full border border-slate-200" src="" alt="Avatar">
             <div>
-                <h2 class="font-bold text-lg">สวัสดี, <span id="userName">กำลังโหลด...</span></h2>
-                <p class="text-xs text-gray-500 font-mono" id="userId">Line ID: -</p>
+                <p class="text-xs text-slate-400">ผู้ตรวจสอบยอด</p>
+                <p id="user-name" class="text-sm font-semibold text-slate-700">กำลังโหลด...</p>
             </div>
         </div>
 
-        <!-- แท็บสลับหน้าจอ (ดูฟอร์ม หรือ ดูรายชื่อ) -->
-        <div class="flex bg-gray-100 rounded-lg p-1">
-            <button onclick="switchTab('form-tab')" id="btn-form" class="w-1/2 py-2 text-center rounded-md bg-white font-medium shadow-sm transition">💰 แจ้งจ่ายเงิน</button>
-            <button onclick="switchTab('list-tab')" id="btn-list" class="w-1/2 py-2 text-center rounded-md text-gray-500 font-medium transition">📊 ดูสถานะห้อง</button>
+        <!-- 💰 การ์ดแสดงเงินคงเหลือ -->
+        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-6 text-white shadow-xl shadow-emerald-100 relative overflow-hidden">
+            <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+            <p class="text-sm uppercase tracking-wider text-emerald-100 font-medium">
+                คงเหลือ ณ วันที่ <span id="current-date">.........</span>
+            </p>
+            <p class="text-4xl font-extrabold mt-2 tracking-tight">
+                1,200.00 <span class="text-xl font-normal text-emerald-100">บาท</span>
+            </p>
         </div>
 
-        <!-- หน้าที่ 1: ฟอร์มแจ้งจ่ายเงิน -->
-        <div id="form-tab" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">เลือกเลขห้องของคุณ</label>
-                <select id="roomSelect" class="w-full border rounded-lg p-2.5 bg-white focus:ring-2 focus:ring-green-500">
-                    <!-- รายชื่อห้องพัก 16-20 ห้อง (สามารถเข้าไปเพิ่ม/ลดเลขห้องตรงนี้ได้เลยครับ) -->
-                    <option value="101">ห้อง 101</option>
-                    <option value="102">ห้อง 102</option>
-                    <option value="103">ห้อง 103</option>
-                    <option value="104">ห้อง 104</option>
-                    <option value="105">ห้อง 105</option>
-                    <option value="106">ห้อง 106</option>
-                    <option value="107">ห้อง 107</option>
-                    <option value="108">ห้อง 108</option>
-                    <option value="109">ห้อง 109</option>
-                    <option value="110">ห้อง 110</option>
-                    <option value="111">ห้อง 111</option>
-                    <option value="112">ห้อง 112</option>
-                    <option value="113">ห้อง 113</option>
-                    <option value="114">ห้อง 114</option>
-                    <option value="115">ห้อง 115</option>
-                    <option value="116">ห้อง 116</option>
-                    <option value="117">ห้อง 117</option>
-                    <option value="118">ห้อง 118</option>
-                    <option value="119">ห้อง 119</option>
-                    <option value="120">ห้อง 120</option>
-                </select>
-            </div>
+        <!-- ✅ การ์ดรายชื่อผู้ชำระเงิน -->
+        <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-4">
+            <h3 class="text-md font-bold text-slate-900 flex items-center">
+                <span class="mr-2 text-emerald-500">✅</span> ใครจ่ายแล้วบ้าง ?
+            </h3>
+            
+            <div class="divide-y divide-slate-100">
+                <!-- นาย A -->
+                <div class="py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-medium text-slate-600">A</div>
+                        <span class="font-medium text-slate-700">นาย A</span>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200/50">
+                        🟢 เงินสด
+                    </span>
+                </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">รูปแบบการชำระเงิน</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="border rounded-lg p-3 flex items-center justify-center cursor-pointer hover:bg-gray-50 border-green-600 bg-green-50" id="label-transfer">
-                        <input type="radio" name="payType" value="เงินโอน" checked onclick="togglePayType('transfer')" class="mr-2 accent-green-600"> 📱 เงินโอน
-                    </label>
-                    <label class="border rounded-lg p-3 flex items-center justify-center cursor-pointer hover:bg-gray-50" id="label-cash">
-                        <input type="radio" name="payType" value="เงินสด" onclick="togglePayType('cash')" class="mr-2 accent-green-600"> 💵 เงินสด
-                    </label>
+                <!-- นาย B -->
+                <div class="py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-medium text-slate-600">B</div>
+                        <span class="font-medium text-slate-700">นาย B</span>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/50">
+                        🔵 เงินโอน
+                    </span>
                 </div>
             </div>
-
-            <!-- ข้อความแนะนำสำหรับโหมดโอนเงิน (คุณสามารถใส่เลขบัญชีธนาคารไว้ตรงนี้ได้) -->
-            <div id="transfer-note" class="bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-lg text-sm">
-                📌 <b>บัญชีธนาคารสำหรับโอนเงิน:</b><br>
-                ธนาคารกสิกรไทย: 000-0-00000-0 (ชื่อบัญชี แอดมิน)
-            </div>
-
-            <button onclick="submitPayment()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-md">
-                ส่งข้อมูลแจ้งชำระเงิน
-            </button>
         </div>
 
-        <!-- หน้าที่ 2: รายชื่อสถานะห้องพัก -->
-        <div id="list-tab" class="space-y-3 hidden">
-            <h3 class="font-bold text-sm text-gray-500 uppercase tracking-wider">สถานะการชำระเงินเดือนนี้</h3>
-            <div id="statusList" class="divide-y max-h-80 overflow-y-auto">
-                <p class="text-center py-4 text-gray-400 text-sm">กำลังโหลดข้อมูลห้องพัก...</p>
-            </div>
-        </div>
+        <!-- 🔔 ปุ่มกดส่งยอดเข้าแชทกลุ่มไลน์ -->
+        <button onclick="sendSummary()" class="w-full bg-slate-950 hover:bg-slate-900 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 active:scale-[0.98]">
+            <span>📢 ส่งยอดสรุปนี้เข้าแชทกลุ่ม</span>
+        </button>
+
     </div>
 
-    <!-- ส่วนควบคุมระบบด้วย JavaScript -->
+    <!-- ส่วนควบคุมระบบ LINE LIFF และการคำนวณ -->
     <script>
-        // ⚠️ สำคัญ: เมื่อทำ Google Apps Script เสร็จแล้ว ให้เอา URL มาใส่ตรงนี้ครับ
-        const GAS_WEB_APP_URL = "ใส่_URL_ของ_Google_Apps_Script_ที่นี่";
-        // ⚠️ สำคัญ: นำ LIFF ID จากหน้า LINE Login มาใส่ตรงนี้ครับ
-        const MY_LIFF_ID = "ใส่_LIFF_ID_ของคุณที่นี่"; 
-        
-        let userLineId = "";
+        // 1. ใส่วันที่ปัจจุบันอัตโนมัติ
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('th-TH', options);
 
-        // 1. เปิดใช้งาน LINE LIFF
-        async function initLIFF() {
+        // 2. ตั้งค่าเชื่อมต่อ LINE LIFF
+        async function initLiff() {
             try {
-                await liff.init({ liffId: MY_LIFF_ID });
+                // ⚠️ สำคัญ: นำ LIFF ID จากหน้า LINE Developers มาใส่ตรงนี้แทน "YOUR_LIFF_ID"
+                await liff.init({ liffId: "YOUR_LIFF_ID" }); 
+                
                 if (liff.isLoggedIn()) {
                     getUserProfile();
-                    loadStatusList(); 
                 } else {
-                    liff.login(); 
+                    liff.login();
                 }
             } catch (error) {
-                console.error("LIFF Init Error", error);
+                console.error("LIFF การเชื่อมต่อล้มเหลว:", error);
             }
         }
 
-        // 2. ดึงชื่อและรูปโปรไฟล์ไลน์
+        // ดึงข้อมูลคนเปิดดูมาแสดง
         async function getUserProfile() {
             const profile = await liff.getProfile();
-            userLineId = profile.userId;
-            document.getElementById("userName").innerText = profile.displayName;
-            document.getElementById("userAvatar").src = profile.pictureUrl;
-            document.getElementById("userId").innerText = "Line ID: " + profile.userId;
+            document.getElementById('profile-box').classList.remove('hidden');
+            document.getElementById('user-name').innerText = profile.displayName;
+            document.getElementById('user-avatar').src = profile.pictureUrl;
         }
 
-        // 3. สลับแท็บหน้าจอ
-        function switchTab(tabId) {
-            if (tabId === 'form-tab') {
-                document.getElementById("form-tab").classList.remove("hidden");
-                document.getElementById("list-tab").classList.add("hidden");
-                document.getElementById("btn-form").className = "w-1/2 py-2 text-center rounded-md bg-white font-medium shadow-sm border";
-                document.getElementById("btn-list").className = "w-1/2 py-2 text-center rounded-md text-gray-500 font-medium";
+        // 3. ฟังก์ชันส่งข้อความสรุปกลับเข้าไปในแชทกลุ่มที่เปิดอยู่
+        async function sendSummary() {
+            const dateStr = document.getElementById('current-date').innerText;
+            const messageText = `💰 สรุปยอดเงินกลุ่ม\n\n🔹 คงเหลือ ณ วันที่ ${dateStr}\n👉 ยอดเงิน: 1,200.00 บาท\n\n✅ ใครจ่ายแล้วบ้าง ?\n- นาย A (เงินสด)\n- นาย B (เงินโอน)`;
+
+            if (liff.isInClient()) {
+                try {
+                    await liff.sendMessages([{ type: 'text', text: messageText }]);
+                    alert('ส่งข้อความเข้ากลุ่มเรียบร้อยแล้ว!');
+                    liff.closeWindow(); // ปิดหน้าต่าง LIFF ทันทีหลังส่งเสร็จ
+                } catch (error) {
+                    alert('เกิดข้อผิดพลาดในการส่งข้อความ: ' + error.message);
+                }
             } else {
-                document.getElementById("form-tab").classList.add("hidden");
-                document.getElementById("list-tab").classList.remove("hidden");
-                document.getElementById("btn-form").className = "w-1/2 py-2 text-center rounded-md text-gray-500 font-medium";
-                document.getElementById("btn-list").className = "w-1/2 py-2 text-center rounded-md bg-white font-medium shadow-sm border";
-                loadStatusList(); // รีเฟรชข้อมูลทุกครั้งที่กดดูสถานะ
+                // กรณีเปิดบนเบราว์เซอร์ทั่วไปที่ไม่ได้เปิดผ่านแอป LINE
+                alert("ฟังก์ชันส่งเข้าแชทกลุ่มจะทำงานเมื่อเปิดผ่านแอป LINE เท่านั้นครับ\n\nข้อความที่จะส่ง:\n" + messageText);
             }
         }
 
-        // 4. เปลี่ยนไฮไลท์ปุ่มประเภทการจ่ายเงิน
-        function togglePayType(type) {
-            const transferLabel = document.getElementById("label-transfer");
-            const cashLabel = document.getElementById("label-cash");
-            const transferNote = document.getElementById("transfer-note");
-
-            if (type === 'transfer') {
-                transferLabel.className = "border rounded-lg p-3 flex items-center justify-center cursor-pointer hover:bg-gray-50 border-green-600 bg-green-50";
-                cashLabel.className = "border rounded-lg p-3 flex items-center justify-center cursor-pointer hover:bg-gray-50";
-                transferNote.classList.remove("hidden");
-            } else {
-                cashLabel.className = "border rounded-lg p-3 flex items-center justify-center cursor-pointer hover:bg-gray-50 border-green-600 bg-green-50";
-                transferLabel.className = "border rounded-lg p-3 flex items-center justify-center cursor-pointer hover:bg-gray-50";
-                transferNote.classList.add("hidden");
-            }
-        }
-
-        // 5. ส่งข้อมูลแจ้งจ่ายเงินไป Google Sheets
-        function submitPayment() {
-            const room = document.getElementById("roomSelect").value;
-            const type = document.querySelector('input[name="payType"]:checked').value;
-
-            if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) {
-                alert("กรุณาติดตั้ง GAS Web App URL ในโค้ดก่อนครับ");
-                return;
-            }
-
-            fetch(GAS_WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    action: "savePayment",
-                    lineId: userLineId,
-                    roomNo: room,
-                    payType: type
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                alert("🎉 แจ้งข้อมูลการชำระเงินสำเร็จแล้ว!");
-                liff.closeWindow(); // สั่งปิดหน้าต่างป๊อปอัปอัตโนมัติ
-            })
-            .catch(err => alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่"));
-        }
-
-        // 6. ดึงข้อมูลประวัติจาก Google Sheets มาโชว์ในแท็บสถานะ
-        function loadStatusList() {
-            if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) return;
-
-            fetch(GAS_WEB_APP_URL + "?action=getStatus")
-            .then(res => res.json())
-            .then(data => {
-                const listContainer = document.getElementById("statusList");
-                listContainer.innerHTML = ""; 
-                
-                if(data.length === 0) {
+        // เริ่มทำงานเมื่อโหลดหน้าเว็บ
+        initLiff();
+    </script>
+</body>
+</html>
