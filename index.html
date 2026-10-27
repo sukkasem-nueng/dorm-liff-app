@@ -150,7 +150,16 @@
     <h2>💰 บันทึกการจ่ายเงินกลุ่ม</h2>
 
     <div class="profile">
-      <div class="avatar">👤</div>
+       <img
+    id="profileImage"
+    alt="รูปโปรไฟล์ LINE"
+    hidden
+    width="64"
+    height="64"
+    style="border-radius:50%;object-fit:cover;"
+  >
+
+  <div id="displayName">กำลังโหลดโปรไฟล์...</div>
       <div id="displayName" class="name">
         กำลังเชื่อมต่อ LINE...
       </div>
@@ -158,6 +167,8 @@
         ระบบบันทึกการจ่ายเงินประจำเดือน
       </div>
     </div>
+
+
 
     <label for="paymentMonth">เดือนที่ต้องการบันทึก</label>
     <input type="month" id="paymentMonth">
@@ -206,6 +217,41 @@
       return now.getFullYear() + '-' +
         String(now.getMonth() + 1).padStart(2, '0');
     }
+
+    
+async function loadLineProfile() {
+  try {
+    await liff.ready;
+
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+
+    const profile = await liff.getProfile();
+
+    console.log('LINE User ID:', profile.userId);
+    console.log('ชื่อ LINE:', profile.displayName);
+    console.log('รูปโปรไฟล์:', profile.pictureUrl);
+    console.log('สถานะ:', profile.statusMessage);
+
+    // แสดงชื่อบนหน้าเว็บ
+    document.getElementById('displayName').textContent =
+      profile.displayName || 'สมาชิก LINE';
+
+    // แสดงรูปโปรไฟล์ ถ้ามี URL
+    const avatar = document.getElementById('profileImage');
+
+    if (avatar && profile.pictureUrl) {
+      avatar.src = profile.pictureUrl;
+      avatar.hidden = false;
+    }
+
+  } catch (error) {
+    console.error('โหลด LINE Profile ไม่สำเร็จ:', error);
+  }
+}
+
 
     async function initLiff() {
       setButtons(false);
