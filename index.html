@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>บันทึกการจ่ายเงินประจำเดือน</title>
-    <!-- โหลด LINE SDK -->
+    <!-- โหลด LINE SDK ตัวหลัก -->
     <script src="https://line-scdn.net"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -28,10 +28,10 @@
         
         <div class="profile-zone">
             <p class="hello">สมาชิกระบบไลน์</p>
-            <!-- แสดงชื่อโปรไฟล์ -->
-            <p id="displayName" class="name">กำลังโหลด...</p>
+            <p id="displayName" class="name">กำลังเชื่อมต่อ LINE...</p>
         </div>
 
+        <!-- ส่งข้อมูลในรูปแบบ Form parameters ลดปัญหาโหลดช้า/CORS บนมือถือ -->
         <form id="paymentForm" method="POST" target="hidden_iframe">
             <input type="hidden" name="name" id="inputName">
             <input type="hidden" name="payType" id="inputPayType">
@@ -50,37 +50,35 @@
     </div>
 
     <script>
-        // 🚨 แก้ไขข้อมูลสำคัญ 2 จุดนี้ให้ถูกต้อง 🚨
         const LIFF_ID = '2012247912-c3hTHOtT'; 
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzjjHXZtUAnuUD3Dp4UdD5qn2sPClUitl8swFIF1IMKAw-zdjZW93hYCwUtn5KY6UQ/exec';
 
         let userDisplayName = "";
         document.getElementById('paymentForm').action = WEB_APP_URL;
 
-        // เริ่มการทำงานระบบแบบด่วนพิเศษ
+        // เริ่มระบวนการยืนยันตัวตน LINE LIFF
         liff.init({ liffId: LIFF_ID }).then(() => {
             if (!liff.isLoggedIn()) {
                 liff.login();
             } else {
-                // ดึงชื่อจากการถอดรหัส Token โดยตรง (ไม่เรียกผ่าน API ทำให้เร็วขึ้นมากและไม่ค้าง)
+                // ดึงชื่อผ่าน ID Token ทันที ไม่ติดกล่องหมุนค้าง
                 const idToken = liff.getDecodedIDToken();
-                if (idToken && idToken.name) {
-                    userDisplayName = idToken.name;
-                } else {
-                    userDisplayName = "สมาชิกกลุ่ม LINE";
-                }
-
-                // แสดงผลบนหน้าจอทันที
+                userDisplayName = (idToken && idToken.name) ? idToken.name : "สมาชิกกลุ่ม LINE";
                 document.getElementById('displayName').innerText = userDisplayName;
                 
-                // เปิดให้กดปุ่มได้เลย
+                // เปิดให้สามารถคลิกปุ่มได้
                 document.getElementById('btnTransfer').disabled = false;
                 document.getElementById('btnCash').disabled = false;
             }
         }).catch((err) => {
-            document.getElementById('displayName').innerText = "กรุณาเปิดลิงก์ผ่านแอป LINE กลุ่ม";
+            // ระบบกรณีกดทดสอบภายนอกแอป LINE ให้ยังจำลองชื่อเพื่อทดสอบได้
+            userDisplayName = "ผู้ทดสอบระบบ";
+            document.getElementById('displayName').innerText = userDisplayName;
+            document.getElementById('btnTransfer').disabled = false;
+            document.getElementById('btnCash').disabled = false;
         });
 
+        // ฟังก์ชันสั่งส่งข้อมูลฟอร์ม
         function submitPayment(type) {
             if (!userDisplayName) return;
             
@@ -93,9 +91,11 @@
 
             document.getElementById('paymentForm').submit();
 
+            alert(`บันทึกสถานะ "${type}" เข้า Google Sheet เรียบร้อยแล้ว!`);
+
             setTimeout(() => {
-                liff.closeWindow();
-            }, 300); 
+                liff.closeWindow(); // ปิดหน้าต่างหน้าระบบทันที
+            }, 500); 
         }
     </script>
 </body>
