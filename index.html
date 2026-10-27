@@ -4,69 +4,247 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สรุปยอดเงินกลุ่ม</title>
-    <!-- ดึง Tailwind CSS มาช่วยแต่งหน้าจอให้สวยงาม -->
-    <script src="https://tailwindcss.com"></script>
     <!-- ดึง LINE LIFF SDK เพื่อเชื่อมต่อกับไลน์ -->
     <script src="https://line-scdn.net"></script>
+    
+    <!-- ฝังระบบ CSS สวยงามแบบ Web Version ไม่ต้องง้อ CDN ภายนอก -->
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        /* โปรไฟล์ผู้ดู */
+        .profile-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            padding: 12px 16px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+        .profile-card.hidden {
+            display: none;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #e2e8f0;
+            object-fit: cover;
+        }
+        .profile-title {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+        .profile-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+        }
+        /* การ์ดเงินคงเหลือสไตล์หรูหรา */
+        .balance-card {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 24px;
+            border-radius: 24px;
+            color: #ffffff;
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            right: -20px;
+            bottom: -20px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            filter: blur(20px);
+        }
+        .balance-label {
+            font-size: 13px;
+            color: #d1fae5;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+        .balance-amount {
+            font-size: 38px;
+            font-weight: 800;
+            margin-top: 8px;
+            letter-spacing: -0.5px;
+        }
+        .balance-currency {
+            font-size: 20px;
+            font-weight: 400;
+            color: #d1fae5;
+            margin-left: 4px;
+        }
+        /* รายชื่อผู้ชำระเงิน */
+        .list-card {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+        .list-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .list-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-initial {
+            width: 32px;
+            height: 32px;
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .user-name {
+            font-weight: 500;
+            color: #334155;
+            font-size: 15px;
+        }
+        /* Badge ป้ายสถานะ */
+        .badge {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            border: 1px solid transparent;
+        }
+        .badge-cash {
+            background-color: #f0fdf4;
+            color: #166534;
+            border-color: #dcfce7;
+        }
+        .badge-transfer {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-color: #dbeafe;
+        }
+        /* ปุ่มส่งข้อความ */
+        .btn-submit {
+            width: 100%;
+            background-color: #0f172a;
+            color: #ffffff;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 16px;
+            border-radius: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .btn-submit:hover {
+            background-color: #1e293b;
+        }
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+    </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 antialiased">
+<body>
 
-    <div class="max-w-md mx-auto p-4 space-y-4">
+    <div class="container">
         
-        <!-- ส่วนหัวแสดงโปรไฟล์ผู้เปิดดู (ดึงจาก LINE) -->
-        <div id="profile-box" class="flex items-center space-x-3 bg-white p-3 rounded-2xl shadow-sm border border-slate-100 hidden">
-            <img id="user-avatar" class="w-10 h-10 rounded-full border border-slate-200" src="" alt="Avatar">
+        <!-- ส่วนหัวแสดงโปรไฟล์ผู้ใช้งาน LINE -->
+        <div id="profile-box" class="profile-card hidden">
+            <img id="user-avatar" class="avatar" src="" alt="Avatar">
             <div>
-                <p class="text-xs text-slate-400">ผู้ตรวจสอบยอด</p>
-                <p id="user-name" class="text-sm font-semibold text-slate-700">กำลังโหลด...</p>
+                <p class="profile-title">ผู้ตรวจสอบยอด</p>
+                <p id="user-name" class="profile-name">กำลังโหลด...</p>
             </div>
         </div>
 
         <!-- 💰 การ์ดแสดงเงินคงเหลือ -->
-        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-6 text-white shadow-xl shadow-emerald-100 relative overflow-hidden">
-            <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-            <p class="text-sm uppercase tracking-wider text-emerald-100 font-medium">
+        <div class="balance-card">
+            <p class="balance-label">
                 คงเหลือ ณ วันที่ <span id="current-date">.........</span>
             </p>
-            <p class="text-4xl font-extrabold mt-2 tracking-tight">
-                1,200.00 <span class="text-xl font-normal text-emerald-100">บาท</span>
+            <p class="balance-amount">
+                1,200.00<span class="balance-currency">บาท</span>
             </p>
         </div>
 
         <!-- ✅ การ์ดรายชื่อผู้ชำระเงิน -->
-        <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-4">
-            <h3 class="text-md font-bold text-slate-900 flex items-center">
-                <span class="mr-2 text-emerald-500">✅</span> ใครจ่ายแล้วบ้าง ?
+        <div class="list-card">
+            <h3 class="list-title">
+                <span>✅</span> ใครจ่ายแล้วบ้าง ?
             </h3>
             
-            <div class="divide-y divide-slate-100">
+            <div>
                 <!-- นาย A -->
-                <div class="py-3 flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-medium text-slate-600">A</div>
-                        <span class="font-medium text-slate-700">นาย A</span>
+                <div class="list-item">
+                    <div class="user-info">
+                        <div class="user-initial">A</div>
+                        <span class="user-name">นาย A</span>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200/50">
-                        🟢 เงินสด
-                    </span>
+                    <span class="badge badge-cash">🟢 เงินสด</span>
                 </div>
 
                 <!-- นาย B -->
-                <div class="py-3 flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-medium text-slate-600">B</div>
-                        <span class="font-medium text-slate-700">นาย B</span>
+                <div class="list-item">
+                    <div class="user-info">
+                        <div class="user-initial">B</div>
+                        <span class="user-name">นาย B</span>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/50">
-                        🔵 เงินโอน
-                    </span>
+                    <span class="badge badge-transfer">🔵 เงินโอน</span>
                 </div>
             </div>
         </div>
 
-        <!-- 🔔 ปุ่มกดส่งยอดเข้าแชทกลุ่มไลน์ -->
-        <button onclick="sendSummary()" class="w-full bg-slate-950 hover:bg-slate-900 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 active:scale-[0.98]">
-            <span>📢 ส่งยอดสรุปนี้เข้าแชทกลุ่ม</span>
+        <!-- 🔔 ปุ่มกดส่งยอดเข้าแชทกลุ่ม -->
+        <button onclick="sendSummary()" class="btn-submit">
+            📢 ส่งยอดสรุปนี้เข้าแชทกลุ่ม
         </button>
 
     </div>
@@ -80,7 +258,7 @@
         // 2. ตั้งค่าเชื่อมต่อ LINE LIFF
         async function initLiff() {
             try {
-                // ⚠️ สำคัญ: นำ LIFF ID จากหน้า LINE Developers มาใส่ตรงนี้แทน "YOUR_LIFF_ID"
+                // ⚠️ นำ LIFF ID จากหน้า LINE Developers มาใส่แทนที่คำว่า "YOUR_LIFF_ID"
                 await liff.init({ liffId: "YOUR_LIFF_ID" }); 
                 
                 if (liff.isLoggedIn()) {
@@ -93,15 +271,19 @@
             }
         }
 
-        // ดึงข้อมูลคนเปิดดูมาแสดง
+        // ดึงข้อมูลโปรไฟล์ LINE
         async function getUserProfile() {
-            const profile = await liff.getProfile();
-            document.getElementById('profile-box').classList.remove('hidden');
-            document.getElementById('user-name').innerText = profile.displayName;
-            document.getElementById('user-avatar').src = profile.pictureUrl;
+            try {
+                const profile = await liff.getProfile();
+                document.getElementById('profile-box').classList.remove('hidden');
+                document.getElementById('user-name').innerText = profile.displayName;
+                document.getElementById('user-avatar').src = profile.pictureUrl;
+            } catch (err) {
+                console.log("ไม่สามารถดึงโปรไฟล์ได้:", err);
+            }
         }
 
-        // 3. ฟังก์ชันส่งข้อความสรุปกลับเข้าไปในแชทกลุ่มที่เปิดอยู่
+        // 3. ฟังก์ชันส่งข้อความสรุปกลับเข้าไปในแชทกลุ่ม
         async function sendSummary() {
             const dateStr = document.getElementById('current-date').innerText;
             const messageText = `💰 สรุปยอดเงินกลุ่ม\n\n🔹 คงเหลือ ณ วันที่ ${dateStr}\n👉 ยอดเงิน: 1,200.00 บาท\n\n✅ ใครจ่ายแล้วบ้าง ?\n- นาย A (เงินสด)\n- นาย B (เงินโอน)`;
@@ -110,12 +292,11 @@
                 try {
                     await liff.sendMessages([{ type: 'text', text: messageText }]);
                     alert('ส่งข้อความเข้ากลุ่มเรียบร้อยแล้ว!');
-                    liff.closeWindow(); // ปิดหน้าต่าง LIFF ทันทีหลังส่งเสร็จ
+                    liff.closeWindow(); 
                 } catch (error) {
                     alert('เกิดข้อผิดพลาดในการส่งข้อความ: ' + error.message);
                 }
             } else {
-                // กรณีเปิดบนเบราว์เซอร์ทั่วไปที่ไม่ได้เปิดผ่านแอป LINE
                 alert("ฟังก์ชันส่งเข้าแชทกลุ่มจะทำงานเมื่อเปิดผ่านแอป LINE เท่านั้นครับ\n\nข้อความที่จะส่ง:\n" + messageText);
             }
         }
