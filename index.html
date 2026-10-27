@@ -149,24 +149,26 @@
   <main class="card">
     <h2>💰 บันทึกการจ่ายเงินกลุ่ม</h2>
 
+   
     <div class="profile">
-       <img
-    id="profileImage"
-    alt="รูปโปรไฟล์ LINE"
-    hidden
-    width="64"
-    height="64"
-    style="border-radius:50%;object-fit:cover;"
-  >
-
-  <div id="displayName">กำลังโหลดโปรไฟล์...</div>
+      <img
+        id="profileImage"
+        alt="รูปโปรไฟล์ LINE"
+        hidden
+        width="64"
+        height="64"
+        style="border-radius: 50%; object-fit: cover;"
+      >
+    
       <div id="displayName" class="name">
         กำลังเชื่อมต่อ LINE...
       </div>
+    
       <div class="muted">
         ระบบบันทึกการจ่ายเงินประจำเดือน
       </div>
     </div>
+
 
 
 
@@ -291,6 +293,22 @@ async function loadLineProfile() {
           'เชื่อมต่อ LINE สำเร็จ พร้อมบันทึกการจ่ายเงิน',
           'info'
         );
+          
+                  
+          const profile = await liff.getProfile();
+          
+          $('displayName').textContent =
+            profile.displayName || 'สมาชิก LINE';
+          
+          const avatar = $('profileImage');
+          
+          if (profile.pictureUrl) {
+            avatar.src = profile.pictureUrl;
+            avatar.hidden = false;
+          } else {
+            avatar.hidden = true;
+          }
+
 
       } catch (error) {
         console.error('LIFF initialization error:', error);
