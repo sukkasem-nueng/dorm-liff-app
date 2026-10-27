@@ -155,6 +155,20 @@
             text-align: right; 
             display: block; 
         }
+        
+        .date-label {
+            font-size: 9px;
+            color: #e2c792;
+            letter-spacing: 1px;
+            font-weight: 500;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 10;
+            text-align: right;
+            width: 100%;
+        }
+
+        
 
         /* ตัวหนังสือสกุลเงิน 'THB' ด้านหลัง */
         .balance-currency {
@@ -166,73 +180,99 @@
         }
 
         /* รายชื่อผู้ชำระเงิน */
+                /* การ์ดรายชื่อผู้ชำระเงินสไตล์ลักชูรี */
         .list-card {
             background: #ffffff;
-            padding: 20px;
+            padding: 24px;
             border-radius: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #f1f5f9;
+            box-shadow: 0 10px 30px -10px rgba(76, 5, 25, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.15); /* ขอบทองบางๆ */
         }
+
+        /* หัวข้อการ์ด */
         .list-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 12px;
+            color: #4c0519; /* สีแดงเบอร์กันดี */
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
+            letter-spacing: 0.5px;
         }
+
+        /* มงกุฎหรือสัญลักษณ์หน้าหัวข้อ */
+        .list-title::before {
+            content: '👑';
+            font-size: 14px;
+        }
+
+        /* แถวรายชื่อ */
         .list-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f1f5f9;
+            padding: 14px 0;
+            border-bottom: 1px solid #f8fafc;
         }
         .list-item:last-child {
             border-bottom: none;
             padding-bottom: 0;
         }
+
+        /* ข้อมูลผู้ใช้งาน */
         .user-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }
-        .user-initial {
-            width: 32px;
-            height: 32px;
-            background: #f1f5f9;
-            color: #475569;
+
+        /* วงกลมรูปโปรไฟล์/อักษรย่อ ขอบทอง */
+        .user-avatar-premium {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #fdf8e6 0%, #f3e5ab 100%);
+            color: #4c0519;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 14px;
+            border: 1.5px solid rgba(212, 175, 55, 0.4);
+            box-shadow: 0 2px 4px rgba(212, 175, 55, 0.1);
         }
-        .user-name {
-            font-weight: 500;
-            color: #334155;
+
+        .user-name-premium {
+            font-weight: 600;
+            color: #1e293b;
             font-size: 15px;
         }
-        /* Badge ป้ายสถานะ */
-        .badge {
-            font-size: 12px;
+
+        /* ป้ายสถานะสีทองแชมเปญ (เงินสด) */
+        .badge-wisdom-gold {
+            font-size: 11px;
             font-weight: 600;
-            padding: 4px 12px;
+            padding: 6px 14px;
             border-radius: 9999px;
-            border: 1px solid transparent;
+            background: linear-gradient(135deg, #fdf8e6 0%, #f5e6c4 100%);
+            color: #85581A;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            letter-spacing: 0.5px;
         }
-        .badge-cash {
-            background-color: #f0fdf4;
-            color: #166534;
-            border-color: #dcfce7;
+
+        /* ป้ายสถานะสีทองกุหลาบ Rose Gold (เงินโอน) */
+        .badge-wisdom-rose {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+            color: #9f1239;
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            letter-spacing: 0.5px;
         }
-        .badge-transfer {
-            background-color: #eff6ff;
-            color: #1e40af;
-            border-color: #dbeafe;
-        }
+
         /* ปุ่มส่งข้อความ */
         .btn-submit {
             width: 100%;
@@ -275,50 +315,46 @@
             <div class="balance-card-lines-extra"></div>
             
             <p class="balance-label">
-                ⚜️ AVAILABLE BALANCE / ณ วันที่ <span id="current-date">.........</span>
+                ⚜️ จำนวนเงินคงเหลือ</span>
             </p>
             
             <p class="balance-amount">
                 1,200.00<span class="balance-currency">THB</span>
             </p>
+            <p class="date-label">
+               ณ วันที่ <span id="current-date">.........</span>
+            </p>
         </div>
 
 
         <!-- ✅ การ์ดรายชื่อผู้ชำระเงิน -->
+        <!-- ✅ การ์ดรายชื่อผู้ชำระเงินสไตล์หรูหรา Wisdom Theme -->
         <div class="list-card">
             <h3 class="list-title">
-                <span>✅</span> ใครจ่ายแล้วบ้าง ?
+                ใครจ่ายแล้วบ้าง ?
             </h3>
             
             <div>
-                <!-- นาย A -->
+                <!-- รายชื่อ นาย A -->
                 <div class="list-item">
                     <div class="user-info">
-                        <div class="user-initial">A</div>
-                        <span class="user-name">นาย A</span>
+                        <div class="user-avatar-premium">A</div>
+                        <span class="user-name-premium">นาย A</span>
                     </div>
-                    <span class="badge badge-cash">🟢 เงินสด</span>
+                    <span class="badge-wisdom-gold">💵 เงินสด</span>
                 </div>
 
-                <!-- นาย B -->
+                <!-- รายชื่อ นาย B -->
                 <div class="list-item">
                     <div class="user-info">
-                        <div class="user-initial">B</div>
-                        <span class="user-name">นาย B</span>
+                        <div class="user-avatar-premium">B</div>
+                        <span class="user-name-premium">นาย B</span>
                     </div>
-                    <span class="badge badge-transfer">🔵 เงินโอน</span>
-                </div>
-
-                 <!-- นาย C -->
-                <div class="list-item">
-                    <div class="user-info">
-                        <div class="user-initial">C</div>
-                        <span class="user-name">นาย C</span>
-                    </div>
-                    <span class="badge badge-transfer">🔵 เงินโอน</span>
+                    <span class="badge-wisdom-rose">📱 เงินโอน</span>
                 </div>
             </div>
         </div>
+
 
     </div>
 
@@ -332,7 +368,7 @@
         async function initLiff() {
             try {
                 // ⚠️ นำ LIFF ID จากหน้า LINE Developers มาใส่แทนที่คำว่า "YOUR_LIFF_ID"
-                await liff.init({ liffId: "YOUR_LIFF_ID" }); 
+                await liff.init({ liffId: "2012234472-lf1HfqK1" }); 
                 
                 if (liff.isLoggedIn()) {
                     getUserProfile();
@@ -373,6 +409,41 @@
                 alert("ฟังก์ชันส่งเข้าแชทกลุ่มจะทำงานเมื่อเปิดผ่านแอป LINE เท่านั้นครับ\n\nข้อความที่จะส่ง:\n" + messageText);
             }
         }
+
+
+        // ตั้งค่าเชื่อมต่อ LINE LIFF และระบบล็อกหน้าจอ
+async function initLiff() {
+    try {
+        // ⚠️ นำ LIFF ID ของคุณมาใส่ตรงนี้แทน "YOUR_LIFF_ID"
+        await liff.init({ liffId: "2012234472-lf1HfqK1" }); 
+        
+        // 🔒 ตรวจสอบว่าเปิดผ่านแอป LINE บนโทรศัพท์มือถือหรือไม่
+        if (!liff.isInClient()) {
+            // ถ้าไม่ได้เปิดในแอป LINE (เช่น เปิดบนคอม หรือ Chrome ในคอม) ให้เปลี่ยนหน้าเว็บไปที่หน้าแจ้งเตือนทันที
+            document.body.innerHTML = `
+                <div style="min-height: 100vh; background-color: #1e0008; color: #ffffff; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; font-family: 'Prompt', sans-serif;">
+                    <div style="font-size: 50px; margin-bottom: 20px;">🔒</div>
+                    <h2 style="color: #e2c792; font-size: 20px; font-weight: 700; margin-bottom: 10px;">ระบบความปลอดภัย Wisdom</h2>
+                    <p style="color: #f5e6c4; font-size: 14px; max-width: 300px; line-height: 1.6;">
+                        ขออภัยค่ะ หน้าจอสรุปยอดเงินนี้อนุญาตให้เข้าถึงได้เฉพาะการเปิดผ่านแอปพลิเคชัน LINE บนโทรศัพท์มือถือเท่านั้น เพื่อความปลอดภัยของข้อมูล
+                    </p>
+                </div>
+            `;
+            return; // หยุดการทำงานของโค้ดส่วนอื่นทันที ไม่ให้โหลดข้อมูลเงิน
+        }
+
+        // ถ้าเปิดผ่านแอป LINE บนมือถือถูกต้อง ให้ทำงานต่อตามปกติ
+        if (liff.isLoggedIn()) {
+            getUserProfile();
+        } else {
+            liff.login();
+        }
+        
+    } catch (error) {
+        console.error("LIFF การเชื่อมต่อล้มเหลว:", error);
+    }
+}
+
 
         // เริ่มทำงานเมื่อโหลดหน้าเว็บ
         initLiff();
