@@ -4,26 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>บันทึกการจ่ายเงินประจำเดือน</title>
-    <!-- โหลด LINE SDK ไว้ด้านบนสุดเพื่อให้พร้อมทำงานทันที -->
+    <!-- โหลด LINE SDK -->
     <script src="https://line-scdn.net"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; min-h: 100vh; min-height: 100vh; padding: 20px; }
+        body { background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; min-h: 100vh; padding: 20px; }
         .card { background: white; padding: 30px 24px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); width: 100%; max-width: 360px; text-align: center; }
         h2 { font-size: 20px; color: #1f2937; margin-bottom: 24px; font-weight: bold; }
         .profile-zone { display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; }
-        .avatar { width: 75px; height: 75px; border-radius: 50%; border: 3px solid #10b981; margin-bottom: 8px; display: none; }
         .hello { color: #6b7280; font-size: 13px; }
-        .name { font-size: 18px; font-weight: 600; color: #111827; margin-top: 2px; }
-        .btn { width: 100%; padding: 14px; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; margin-bottom: 12px; cursor: pointer; transition: opacity 0.2s; display: block; }
-        .btn:active { opacity: 0.8; }
+        .name { font-size: 18px; font-weight: 600; color: #111827; margin-top: 4px; }
+        .btn { width: 100%; padding: 14px; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; margin-bottom: 12px; cursor: pointer; }
         .btn-transfer { background-color: #2563eb; }
         .btn-cash { background-color: #059669; }
         .btn:disabled { background-color: #d1d5db; color: #9ca3af; cursor: not-allowed; opacity: 0.6; }
         .footer-text { font-size: 11px; color: #9ca3af; margin-top: 20px; }
-        /* วงล้อโหลดตอนเปิดแอป */
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 15px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -32,10 +27,9 @@
         <h2>💰 บันทึกการจ่ายเงินกลุ่ม</h2>
         
         <div class="profile-zone">
-            <img id="avatar" class="avatar" src="" alt="Profile">
-            <p class="hello">สวัสดีคุณ</p>
-            <div id="loader" class="loader"></div>
-            <p id="displayName" class="name">กำลังเชื่อมต่อ LINE...</p>
+            <p class="hello">สมาชิกระบบไลน์</p>
+            <!-- แสดงชื่อโปรไฟล์ -->
+            <p id="displayName" class="name">กำลังโหลด...</p>
         </div>
 
         <form id="paymentForm" method="POST" target="hidden_iframe">
@@ -56,43 +50,36 @@
     </div>
 
     <script>
-        // 🚨 แก้ไขข้อมูลสำคัญ 2 จุดนี้เหมือนเดิม 🚨
+        // 🚨 แก้ไขข้อมูลสำคัญ 2 จุดนี้ให้ถูกต้อง 🚨
         const LIFF_ID = '2012234472-lf1HfqK1'; 
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzjjHXZtUAnuUD3Dp4UdD5qn2sPClUitl8swFIF1IMKAw-zdjZW93hYCwUtn5KY6UQ/exec';
 
         let userDisplayName = "";
         document.getElementById('paymentForm').action = WEB_APP_URL;
 
-        // ฟังก์ชันเริ่มต้น LIFF ทำงานทันทีเมื่อสคริปต์โหลด
-        function initLIFF() {
-            liff.init({ liffId: LIFF_ID }).then(() => {
-                if (!liff.isLoggedIn()) {
-                    liff.login();
+        // เริ่มการทำงานระบบแบบด่วนพิเศษ
+        liff.init({ liffId: LIFF_ID }).then(() => {
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                // ดึงชื่อจากการถอดรหัส Token โดยตรง (ไม่เรียกผ่าน API ทำให้เร็วขึ้นมากและไม่ค้าง)
+                const idToken = liff.getDecodedIDToken();
+                if (idToken && idToken.name) {
+                    userDisplayName = idToken.name;
                 } else {
-                    liff.getProfile().then(profile => {
-                        userDisplayName = profile.displayName;
-                        
-                        // แสดงผลโปรไฟล์และปิดตัวโหลด
-                        document.getElementById('loader').style.display = 'none';
-                        document.getElementById('displayName').innerText = userDisplayName;
-                        
-                        if (profile.pictureUrl) {
-                            const avatar = document.getElementById('avatar');
-                            avatar.src = profile.pictureUrl;
-                            avatar.style.display = 'block';
-                        }
-                        
-                        // เปิดปุ่มใช้งาน
-                        document.getElementById('btnTransfer').disabled = false;
-                        document.getElementById('btnCash').disabled = false;
-                    }).catch(err => {
-                        document.getElementById('displayName').innerText = "ดึงข้อมูลโปรไฟล์ล้มเหลว";
-                    });
+                    userDisplayName = "สมาชิกกลุ่ม LINE";
                 }
-            }).catch(error => {
-                document.getElementById('displayName').innerText = "เชื่อมต่อระบบ LIFF ไม่สำเร็จ";
-            });
-        }
+
+                // แสดงผลบนหน้าจอทันที
+                document.getElementById('displayName').innerText = userDisplayName;
+                
+                // เปิดให้กดปุ่มได้เลย
+                document.getElementById('btnTransfer').disabled = false;
+                document.getElementById('btnCash').disabled = false;
+            }
+        }).catch((err) => {
+            document.getElementById('displayName').innerText = "กรุณาเปิดลิงก์ผ่านแอป LINE กลุ่ม";
+        });
 
         function submitPayment(type) {
             if (!userDisplayName) return;
@@ -100,24 +87,16 @@
             document.getElementById('inputName').value = userDisplayName;
             document.getElementById('inputPayType').value = type;
 
-            // ล็อคปุ่มป้องกันการกดซ้ำ
             document.getElementById('btnTransfer').disabled = true;
             document.getElementById('btnCash').disabled = true;
             document.body.style.opacity = "0.5";
 
-            // ส่งข้อมูลออกไปด้านหลัง
             document.getElementById('paymentForm').submit();
 
-            // ปิดหน้าจอทันทีเพื่อความเร็ว
             setTimeout(() => {
                 liff.closeWindow();
             }, 300); 
         }
-
-        // สั่งให้ระบบทำงานทันทีเมื่อหน้าเว็บพร้อม
-        window.onload = function() {
-            initLIFF();
-        };
     </script>
 </body>
 </html>
