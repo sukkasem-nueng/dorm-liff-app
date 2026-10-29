@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ยอดคงเหลือสุทธิ</title>
+    <!-- เรียกใช้ Tailwind CSS เพื่อความมินิมอลพาสเทล -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body { background-color: #EBF0FF; font-family: system-ui, -apple-system, sans-serif; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- บัตรเครดิตมินิมอลพาสเทล -->
+    <div class="w-full max-w-sm bg-white rounded-3xl shadow-xl shadow-blue-100 overflow-hidden border border-blue-50">
+        <div class="p-6 bg-gradient-to-b from-blue-50 to-white pb-4">
+            <h1 class="text-[#4D7CFF] text-xl font-bold">Financial Dashboard</h1>
+            <p id="month-label" class="text-gray-400 text-xs mt-1">อัปเดตข้อมูลประจำเดือน</p>
+        </div>
+        
+        <div class="px-6 py-8 flex flex-col items-center">
+            <span class="text-sm font-semibold text-gray-500 mb-2">💰 ยอดคงเหลือสะสมทั้งหมด</span>
+            <div class="flex items-baseline text-[#4D7CFF]">
+                <span class="text-4xl font-extrabold" id="balance-amount">0.00</span>
+                <span class="text-sm font-bold ml-1 text-gray-400">THB</span>
+            </div>
+        </div>
+
+        <div class="p-4 bg-gray-50 border-t border-gray-100 text-center">
+            <span class="text-xs font-bold text-gray-400">กองทุนสำรองเลี้ยงห้อง (No Refund)</span>
+        </div>
+    </div>
+
+    <!-- สคริปต์ดึงค่าอัตโนมัติจากปุ่ม LINE -->
+    <script>
+        function getParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // ดึงค่ามาแสดงบนหน้าจอทันทีเมื่อเปิด
+        const balance = getParam('bal') || '0.00';
+        const month = getParam('month') || 'ปัจจุบัน';
+
+        document.getElementById('balance-amount').innerText = Number(balance).toLocaleString('th-TH', {minimumFractionDigits: 2});
+        document.getElementById('month-label').innerText = 'ข้อมูลประจำเดือน ' + decodeURIComponent(month);
+    </script>
+</body>
+</html>
