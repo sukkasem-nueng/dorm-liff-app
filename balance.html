@@ -272,7 +272,7 @@
         <span class="dot" id="statusDot"></span>
         <span id="statusText">กำลังเชื่อมต่อ...</span>
       </div>
-      <span id="updatedAt">รอข้อมูลครั้งแรก</span>
+      <span id="updatedAt">กำลังเชื่อมต่อ...</span>
     </div>
 
     <div id="errorBox" class="error-box" hidden></div>
@@ -419,10 +419,6 @@
       $('monthLabel').textContent =
         'ข้อมูลประจำเดือน ' +
         (data.thaiMonthLabel || data.monthLabel || '');
-
-      $('incomeMonth').textContent = money(data.incomeMonth);
-      $('expenseMonth').textContent = money(data.expenseMonth);
-      $('balanceMonth').textContent = money(data.balanceMonth);
 
       $('incomeTotal').textContent = money(data.incomeTotal);
       $('expenseTotal').textContent = money(data.expenseTotal);
