@@ -1,151 +1,27 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สรุปยอดเงินกลุ่ม</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Sukhumvit Set', 'Thonburi', 'Leelawadee UI', 'Segoe UI', sans-serif;
-        }
-        body {
-            background-color: #1e0008; /* โทนสีแดงเบอร์กันดีพรีเมียม */
-            color: #1e293b;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 20px;
-        }
-        .container {
-            width: 100%;
-            max-width: 450px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        /* 💰 การ์ดแสดงเงินคงเหลือสะสมทั้งหมดแบบ Wisdom */
-        .balance-card {
-            background: linear-gradient(135deg, #4c0519 0%, #1e0008 100%);
-            padding: 28px;
-            border-radius: 24px;
-            color: #ffffff;
-            box-shadow: 0 20px 40px -15px rgba(26, 0, 5, 0.5), 
-                        inset 0 1px 1px rgba(255, 255, 255, 0.2);
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            text-align: left; 
-        }
-        .balance-card::before {
-            content: ''; position: absolute; top: -20%; right: -10%; width: 300px; height: 150px;
-            border-radius: 50%; border: 2px solid rgba(212, 175, 55, 0.08); transform: rotate(-25deg); pointer-events: none;
-        }
-        .balance-card::after {
-            content: ''; position: absolute; bottom: -30%; left: -10%; width: 350px; height: 180px;
-            border-radius: 50%; border-top: 1.5px solid rgba(243, 229, 171, 0.4); border-right: 1px solid rgba(212, 175, 55, 0.2);
-            transform: rotate(15deg); pointer-events: none; filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.2));
-        }
-        .balance-card-lines-extra {
-            position: absolute; top: 15%; left: 20%; width: 280px; height: 90px;
-            border-radius: 50%; border-bottom: 1px solid rgba(212, 175, 55, 0.15); transform: rotate(-10deg); pointer-events: none;
-        }
-        .balance-label {
-            font-size: 12px; color: #e2c792; letter-spacing: 1px; font-weight: 500; text-transform: uppercase;
-            position: relative; z-index: 10; text-align: left; width: 100%;
-        }
-        .balance-amount {
-            font-size: 38px; font-weight: 700; margin-top: 6px; letter-spacing: -0.5px;
-            background: linear-gradient(to right, #ffffff 0%, #f3e5ab 50%, #d4af37 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); position: relative; z-index: 10;
-            text-align: right; display: block; 
-        }
-        .date-label {
-            font-size: 11px; color: #e2c792; letter-spacing: 0.5px; font-weight: 500;
-            position: relative; z-index: 10; text-align: right; width: 100%; margin-top: 4px;
-        }
-        .balance-currency {
-            font-size: 18px; font-weight: 400; -webkit-text-fill-color: #e2c792; margin-left: 6px; display: inline-block;
-        }
-        /* 📋 กล่องรายชื่อผู้ชำระเงิน VIP สไลด์เลื่อน */
-        .vip-list-card {
-            background: rgba(30, 0, 8, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            padding: 22px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .vip-list-title {
-            font-size: 13px; font-weight: 700; color: #e2c792; margin-bottom: 14px;
-            display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px; text-transform: uppercase;
-        }
-        .vip-list-title::before { content: '⚜️'; font-size: 12px; }
-        .vip-scroll-area { max-height: 250px; overflow-y: auto; padding-right: 4px; }
-        .vip-scroll-area::-webkit-scrollbar { width: 4px; }
-        .vip-scroll-area::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
-        .vip-scroll-area::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 99px; }
-        
-        .vip-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(212, 175, 55, 0.08); }
-        .vip-item:last-child { border-bottom: none; padding-bottom: 0; }
-        .vip-user-info { display: flex; align-items: center; gap: 10px; }
-        .vip-avatar {
-            width: 30px; height: 30px; background: linear-gradient(135deg, #1e0008 0%, #4c0519 100%);
-            color: #e2c792; border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            font-weight: 700; font-size: 11px; border: 1px solid rgba(212, 175, 55, 0.3);
-        }
-        .vip-name { font-weight: 500; color: #f1f5f9; font-size: 13px; }
-        .vip-badge { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 9999px; letter-spacing: 0.3px; }
-        .vip-badge-gold { background: rgba(212, 175, 55, 0.12); color: #f3e5ab; border: 1px solid rgba(212, 175, 55, 0.3); }
-        .vip-badge-rose { background: rgba(244, 63, 94, 0.1); color: #ffe4e6; border: 1px solid rgba(244, 63, 94, 0.25); }
-        .empty-message { text-align: center; color: #a0aec0; padding: 20px 0; font-size: 13px; }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <!-- 💰 การ์ดแสดงเงินคงเหลือสะสมทั้งหมด -->
-        <div class="balance-card">
-            <div class="balance-card-lines-extra"></div>
-            <p class="balance-label">⚜️ จำนวนเงินคงเหลือทั้งหมด</p>
-            <p class="balance-amount">
-                <span id="txt-balance">0.00</span><span class="balance-currency">THB</span>
-            </p>
-            <p class="date-label" id="txt-date">ข้อมูลอ้างอิง: -</p>
-        </div>
-
-        <!-- 📋 รายชื่อผู้ชำระเงินของเดือนนั้นๆ -->
-        <div class="vip-list-card">
-            <h3 class="vip-list-title" id="list-title">รายชื่อผู้ชำระเงิน</h3>
-            <div class="vip-scroll-area" id="vip-container">
-                <!-- รายชื่อดึงมาวางที่นี่อัตโนมัติ -->
-            </div>
-        </div>
-    </div>
-
     <script>
-        // ฟังก์ชันแกะค่า Parameter จากลิงก์ URL
+        // ฟังก์ชันอ่านค่า Parameter จาก URL
         function getQueryParam(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
 
-        // ประมวลผลและดึงข้อมูลมาแสดผลทันทีเมื่อเปิดหน้าเว็บ
         function renderDashboardData() {
             const balParam = getQueryParam('bal') || '0';
             const dateParam = getQueryParam('date') || '-';
             const membersParam = getQueryParam('members') || '';
 
-            // 1. แสดงยอดเงินคงเหลือสะสมทั้งหมดแบบชิดขวา
-            const formattedBal = Number(balParam).toLocaleString('th-TH', {
+            // แปลงรหัสข้อความวันที่ที่ส่งมาจากชีตโดยตรง (เช่น ตุลาคม 2569)
+            const decodedDate = decodeURIComponent(dateParam);
+
+            // 1. แสดงยอดเงินสุทธิคงเหลือสะสมทั้งหมดชิดขวา
+            document.getElementById('txt-balance').innerText = Number(balParam).toLocaleString('th-TH', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
-            document.getElementById('txt-balance').innerText = formattedBal;
-            document.getElementById('txt-date').innerText = 'ข้อมูลอ้างอิง: ' + decodeURIComponent(dateParam);
-            document.getElementById('list-title').innerText = 'PAID MEMBERS / ประจำปี ' + decodeURIComponent(dateParam);
+            document.getElementById('txt-date').innerText = 'ข้อมูลอ้างอิง: ' + decodedDate;
+            document.getElementById('list-title').innerText = 'PAID MEMBERS / ' + decodedDate;
 
-            // 2. แกะรายชื่อสมาชิกมาแสดงผลในกล่องเลื่อน VIP
+            // 2. แสดงผลรายชื่อสมาชิกผู้ชำระเงิน VIP
             const container = document.getElementById('vip-container');
             container.innerHTML = ''; 
 
@@ -154,23 +30,18 @@
                 return;
             }
 
-            // แยกรายชื่อด้วยคอมมา (,)
             const memberList = membersParam.split(',');
             memberList.forEach(item => {
                 if(!item.includes('|')) return;
                 
-                // แยกชื่อและวิธีจ่ายด้วยขีด (|)
                 const parts = item.split('|');
                 const name = decodeURIComponent(parts[0]);
                 const type = decodeURIComponent(parts[1]);
 
                 const vipItem = document.createElement('div');
                 vipItem.className = 'vip-item';
-
-                // เอาอักษรตัวแรกทำรูปวงกลมโปรไฟล์
                 const firstChar = name.trim().charAt(0).toUpperCase();
                 
-                // แยกสีป้ายตามวิธีจ่าย (เงินสด/เงินโอน)
                 let badgeClass = 'vip-badge-gold';
                 if(type.includes('โอน')) {
                     badgeClass = 'vip-badge-rose';
@@ -187,8 +58,5 @@
             });
         }
 
-        // สั่งให้ระบบเริ่มแกะค่าทันทีเมื่อโหลดหน้าเว็บสำเร็จ
         window.onload = renderDashboardData;
     </script>
-</body>
-</html>
